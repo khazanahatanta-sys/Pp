@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith Workspace - Hub Fokus & Produktivitas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            100: '#e0edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Lucide Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti for Decision Wheel -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 9999px;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Breathing animation circle */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.65); opacity: 0.3; }
+        }
+        .animate-breathe {
+            animation: breathe 16s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col relative overflow-x-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- Interactive Background Canvas -->
+    <canvas id="bgCanvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-40 dark:opacity-30"></canvas>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 glass border-b border-slate-200 dark:border-slate-800 px-4 lg:px-8 py-3 transition-colors">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-brand-600 to-indigo-600 dark:from-brand-400 dark:to-indigo-300 bg-clip-text text-transparent">
+                        Zenith Workspace
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Hub Fokus, Suara & Produktivitas</p>
+                </div>
+            </div>
+
+            <!-- Live Digital Clock -->
+            <div class="flex items-center gap-4 bg-slate-200/50 dark:bg-slate-800/50 px-4 py-1.5 rounded-full border border-slate-300/40 dark:border-slate-700/40 text-xs font-mono">
+                <div class="flex items-center gap-1.5 text-brand-600 dark:text-brand-400">
+                    <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                    <span id="liveTime" class="font-bold text-sm">00:00:00</span>
+                </div>
+                <span class="text-slate-400">|</span>
+                <span id="liveDate" class="text-slate-600 dark:text-slate-300">Senin, 1 Jan</span>
+            </div>
+
+            <!-- Controls (Theme Toggle & Settings) -->
+            <div class="flex items-center gap-2">
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all hover:scale-105 active:scale-95" title="Ubah Mode Gelap/Terang">
+                    <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+                </button>
+                <button onclick="resetAllData()" class="p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-all hover:scale-105 active:scale-95 text-xs font-semibold flex items-center gap-1.5" title="Reset Semua Data">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Reset</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="max-w-7xl mx-auto px-4 lg:px-8 mt-6 w-full z-10">
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200 dark:border-slate-800">
+            <button onclick="switchTab('pomodoro')" id="tab-pomodoro" class="tab-btn active-tab flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap">
+                <i data-lucide="timer" class="w-4 h-4"></i>
+                <span>Pomodoro Fokus</span>
+            </button>
+            <button onclick="switchTab('audiozen')" id="tab-audiozen" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap">
+                <i data-lucide="headphones" class="w-4 h-4"></i>
+                <span>Audio Ambient</span>
+            </button>
+            <button onclick="switchTab('kanban')" id="tab-kanban" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+                <span>Tugas & Kebiasaan</span>
+            </button>
+            <button onclick="switchTab('decision')" id="tab-decision" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap">
+                <i data-lucide="dices" class="w-4 h-4"></i>
+                <span>Roda Keputusan</span>
+            </button>
+            <button onclick="switchTab('breathing')" id="tab-breathing" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap">
+                <i data-lucide="wind" class="w-4 h-4"></i>
+                <span>Relaksasi Napas</span>
+            </button>
+            <button onclick="switchTab('scratchpad')" id="tab-scratchpad" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Scratchpad & Tools</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6 w-full flex-1 z-10">
+
+        <!-- MODULE 1: POMODORO TIMER -->
+        <section id="module-pomodoro" class="module-panel block">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Main Timer Card -->
+                <div class="lg:col-span-2 glass rounded-3xl p-6 lg:p-10 flex flex-col items-center justify-center text-center shadow-xl relative overflow-hidden">
+                    <!-- Mode Pills -->
+                    <div class="flex flex-wrap justify-center gap-2 mb-8 bg-slate-200/60 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-300/40 dark:border-slate-800">
+                        <button onclick="setTimerMode('pomodoro')" id="mode-pomodoro" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-brand-600 text-white shadow-md">
+                            Fokus (25m)
+                        </button>
+                        <button onclick="setTimerMode('shortBreak')" id="mode-shortBreak" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                            Istirahat Pendek (5m)
+                        </button>
+                        <button onclick="setTimerMode('longBreak')" id="mode-longBreak" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                            Istirahat Panjang (15m)
+                        </button>
+                    </div>
+
+                    <!-- Circular Timer Display -->
+                    <div class="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center my-4">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <!-- Background track -->
+                            <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="6" class="text-slate-200 dark:text-slate-800" fill="transparent" />
+                            <!-- Progress ring -->
+                            <circle id="timerProgressRing" cx="50" cy="50" r="44" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="text-brand-600 dark:text-brand-500 transition-all duration-1000" fill="transparent" stroke-dasharray="276.46" stroke-dashoffset="0" />
+                        </svg>
+                        <div class="absolute flex flex-col items-center">
+                            <span id="pomoTimeDisplay" class="text-5xl sm:text-6xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-white">
+                                25:00
+                            </span>
+                            <span id="pomoStatusText" class="mt-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Siap Fokus
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Timer Controls -->
+                    <div class="flex items-center gap-4 mt-6">
+                        <button id="startPomoBtn" onclick="togglePomodoro()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-base shadow-lg shadow-brand-500/25 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+                            <i data-lucide="play" id="pomoStartIcon" class="w-5 h-5 fill-current"></i>
+                            <span id="pomoStartBtnText">Mulai Fokus</span>
+                        </button>
+                        <button onclick="resetPomodoro()" class="p-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all hover:scale-105 active:scale-95" title="Reset Waktu">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pomodoro Stats & Settings -->
+                <div class="flex flex-col gap-6">
+                    <div class="glass rounded-3xl p-6 shadow-xl">
+                        <h3 class="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white mb-4">
+                            <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i>
+                            Statistik Hari Ini
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-100/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Sesi Selesai</span>
+                                <p id="statSessionsCount" class="text-2xl font-bold text-brand-600 dark:text-brand-400 mt-1">0</p>
+                            </div>
+                            <div class="bg-slate-100/80 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Menit</span>
+                                <p id="statTotalMinutes" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">0m</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass rounded-3xl p-6 shadow-xl flex-1">
+                        <h3 class="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white mb-4">
+                            <i data-lucide="sliders" class="w-5 h-5 text-brand-500"></i>
+                            Pengaturan Kustom
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">Durasi Fokus (Menit)</label>
+                                <input type="number" id="customFocusInput" value="25" min="1" max="120" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">Istirahat Pendek (Menit)</label>
+                                <input type="number" id="customShortInput" value="5" min="1" max="60" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            </div>
+                            <button onclick="applyCustomPomoTimes()" class="w-full py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all">
+                                Simpan Pengaturan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODULE 2: AUDIOZEN AMBIENT SOUND GENERATOR -->
+        <section id="module-audiozen" class="module-panel hidden">
+            <div class="glass rounded-3xl p-6 lg:p-8 shadow-xl mb-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="volume-2" class="w-5 h-5 text-emerald-500"></i>
+                            AudioZen - Generator Suara Alam Procedural
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Dibuat sintetis menggunakan Web Audio API (Tanpa buffer audio eksternal).</p>
+                    </div>
+                    <button onclick="stopAllAudio()" class="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2 transition-all">
+                        <i data-lucide="square" class="w-4 h-4"></i>
+                        Matikan Semua Suara
+                    </button>
+                </div>
+
+                <!-- Sound Control Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Sound Item: Rain -->
+                    <div class="bg-slate-100/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 rounded-xl bg-blue-500/10 text-blue-500">
+                                    <i data-lucide="cloud-rain" class="w-5 h-5"></i>
+                                </div>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-200">Hujan Deres</span>
+                            </div>
+                            <button onclick="toggleSound('rain')" id="btn-sound-rain" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all hover:scale-105">
+                                <i data-lucide="power" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="setSoundVolume('rain', this.value)" class="w-full accent-brand-500 cursor-pointer">
+                    </div>
+
+                    <!-- Sound Item: Wind -->
+                    <div class="bg-slate-100/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-500">
+                                    <i data-lucide="wind" class="w-5 h-5"></i>
+                                </div>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-200">Angin Sepoi</span>
+                            </div>
+                            <button onclick="toggleSound('wind')" id="btn-sound-wind" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all hover:scale-105">
+                                <i data-lucide="power" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="setSoundVolume('wind', this.value)" class="w-full accent-brand-500 cursor-pointer">
+                    </div>
+
+                    <!-- Sound Item: Ocean Waves -->
+                    <div class="bg-slate-100/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-500">
+                                    <i data-lucide="waves" class="w-5 h-5"></i>
+                                </div>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-200">Gelombang Laut</span>
+                            </div>
+                            <button onclick="toggleSound('waves')" id="btn-sound-waves" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all hover:scale-105">
+                                <i data-lucide="power" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="setSoundVolume('waves', this.value)" class="w-full accent-brand-500 cursor-pointer">
+                    </div>
+
+                    <!-- Sound Item: Campfire -->
+                    <div class="bg-slate-100/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-500">
+                                    <i data-lucide="flame" class="w-5 h-5"></i>
+                                </div>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-200">Api Unggun</span>
+                            </div>
+                            <button onclick="toggleSound('fire')" id="btn-sound-fire" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all hover:scale-105">
+                                <i data-lucide="power" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="setSoundVolume('fire', this.value)" class="w-full accent-brand-500 cursor-pointer">
+                    </div>
+
+                    <!-- Sound Item: Binaural Focus Beat -->
+                    <div class="bg-slate-100/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-500">
+                                    <i data-lucide="brain" class="w-5 h-5"></i>
+                                </div>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-200">Binaural Alpha (40Hz)</span>
+                            </div>
+                            <button onclick="toggleSound('binaural')" id="btn-sound-binaural" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all hover:scale-105">
+                                <i data-lucide="power" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="setSoundVolume('binaural', this.value)" class="w-full accent-brand-500 cursor-pointer">
+                    </div>
+
+                    <!-- Sound Item: Brown Noise -->
+                    <div class="bg-slate-100/80 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-500">
+                                    <i data-lucide="radio" class="w-5 h-5"></i>
+                                </div>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-200">Brown Noise (Fokus)</span>
+                            </div>
+                            <button onclick="toggleSound('brown')" id="btn-sound-brown" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all hover:scale-105">
+                                <i data-lucide="power" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" oninput="setSoundVolume('brown', this.value)" class="w-full accent-brand-500 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODULE 3: KANBAN & HABIT TRACKER -->
+        <section id="module-kanban" class="module-panel hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Kanban Board Section -->
+                <div class="lg:col-span-2 glass rounded-3xl p-6 shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="kanban" class="w-5 h-5 text-brand-500"></i>
+                            Papan Tugas (Kanban)
+                        </h2>
+                        <button onclick="openAddTaskModal()" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-brand-500/20">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            Tambah Tugas
+                        </button>
+                    </div>
+
+                    <!-- Kanban Columns Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- To Do Column -->
+                        <div class="bg-slate-100/70 dark:bg-slate-900/50 p-3.5 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+                            <div class="flex items-center justify-between mb-3 px-1">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> To-Do
+                                </span>
+                                <span id="count-todo" class="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-md font-bold">0</span>
+                            </div>
+                            <div id="col-todo" class="space-y-3 min-h-[250px]"></div>
+                        </div>
+
+                        <!-- In Progress Column -->
+                        <div class="bg-slate-100/70 dark:bg-slate-900/50 p-3.5 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+                            <div class="flex items-center justify-between mb-3 px-1">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-brand-500"></span> Progres
+                                </span>
+                                <span id="count-inprogress" class="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-md font-bold">0</span>
+                            </div>
+                            <div id="col-inprogress" class="space-y-3 min-h-[250px]"></div>
+                        </div>
+
+                        <!-- Done Column -->
+                        <div class="bg-slate-100/70 dark:bg-slate-900/50 p-3.5 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+                            <div class="flex items-center justify-between mb-3 px-1">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Selesai
+                                </span>
+                                <span id="count-done" class="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-md font-bold">0</span>
+                            </div>
+                            <div id="col-done" class="space-y-3 min-h-[250px]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Habit Tracker Section -->
+                <div class="glass rounded-3xl p-6 shadow-xl flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="calendar-check" class="w-5 h-5 text-indigo-500"></i>
+                            Kebiasaan Harian
+                        </h2>
+                        <button onclick="addNewHabitPrompt()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all" title="Tambah Kebiasaan">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Centang kebiasaan yang berhasil Anda selesaikan hari ini:</p>
+
+                    <div id="habitsListContainer" class="space-y-3 flex-1 overflow-y-auto max-h-[450px] pr-1"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODULE 4: DECISION MAKER / RODA KEBERUNTUNGAN -->
+        <section id="module-decision" class="module-panel hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Canvas Wheel Container -->
+                <div class="lg:col-span-2 glass rounded-3xl p-6 flex flex-col items-center justify-center text-center shadow-xl relative min-h-[420px]">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                        <i data-lucide="disc" class="w-5 h-5 text-brand-500"></i>
+                        Roda Keberuntungan & Pengambil Keputusan
+                    </h2>
+
+                    <!-- Pointer -->
+                    <div class="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-red-500 z-20 -mb-3 drop-shadow-md"></div>
+                    
+                    <!-- Wheel Canvas -->
+                    <canvas id="wheelCanvas" width="340" height="340" class="max-w-full rounded-full shadow-2xl transition-transform duration-700"></canvas>
+
+                    <!-- Spin Button -->
+                    <button id="spinWheelBtn" onclick="spinWheel()" class="mt-6 px-8 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-extrabold text-base shadow-lg shadow-amber-500/25 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+                        <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                        Putar Roda!
+                    </button>
+                </div>
+
+                <!-- Options Input & Fast Randomizer -->
+                <div class="flex flex-col gap-6">
+                    <div class="glass rounded-3xl p-6 shadow-xl">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-3">Opsi Pilihan (Satu per baris)</h3>
+                        <textarea id="wheelOptionsTextarea" rows="6" onchange="updateWheelItems()" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" placeholder="Makan Nasi Goreng&#10;Makan Bakso&#10;Ayam Geprek&#10;Ramen"></textarea>
+                        <button onclick="updateWheelItems()" class="w-full mt-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all">
+                            Perbarui Roda
+                        </button>
+                    </div>
+
+                    <!-- Dice & Number Generator -->
+                    <div class="glass rounded-3xl p-6 shadow-xl flex-1">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                            <i data-lucide="dices" class="w-4 h-4 text-emerald-500"></i>
+                            Acak Angka Cepat
+                        </h3>
+                        <div class="flex gap-2 mb-3">
+                            <input type="number" id="numMin" value="1" placeholder="Min" class="w-1/2 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
+                            <input type="number" id="numMax" value="100" placeholder="Max" class="w-1/2 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                        <button onclick="generateRandomNumber()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-md">
+                            Acak Angka
+                        </button>
+                        <div class="mt-4 text-center">
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Hasil:</span>
+                            <p id="randomNumberResult" class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODULE 5: PANDUAN BERNAPAS & MEDITASI -->
+        <section id="module-breathing" class="module-panel hidden">
+            <div class="glass rounded-3xl p-6 lg:p-10 flex flex-col items-center justify-center text-center shadow-xl min-h-[480px]">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <i data-lucide="wind" class="w-6 h-6 text-sky-400"></i>
+                    Latihan Napas Relaksasi
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mb-8">
+                    Teknik Box Breathing (4-4-4-4) untuk menenangkan pikiran, mengurangi stres, dan meningkatkan fokus sebelum bekerja.
+                </p>
+
+                <!-- Breathing Circle Visualizer -->
+                <div class="relative w-56 h-56 flex items-center justify-center my-6">
+                    <div id="breatheGuideCircle" class="absolute w-40 h-40 rounded-full bg-sky-500/20 border-2 border-sky-400/50 flex items-center justify-center transition-all duration-[4000ms] ease-in-out">
+                        <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 opacity-80 blur-sm"></div>
+                    </div>
+                    <span id="breatheText" class="z-10 text-xl font-bold text-slate-800 dark:text-white tracking-wide">
+                        Siap?
+                    </span>
+                </div>
+
+                <!-- Breathing Controls -->
+                <div class="flex items-center gap-4 mt-8">
+                    <button id="startBreatheBtn" onclick="toggleBreathing()" class="px-8 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm shadow-lg shadow-sky-500/25 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+                        <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                        <span>Mulai Latihan</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODULE 6: SCRATCHPAD & QUICK UTILITIES -->
+        <section id="module-scratchpad" class="module-panel hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Scratchpad Textarea -->
+                <div class="lg:col-span-2 glass rounded-3xl p-6 shadow-xl flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="edit-3" class="w-5 h-5 text-indigo-500"></i>
+                            Scratchpad & Catatan Cepat
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <span id="scratchStats" class="text-xs text-slate-500 dark:text-slate-400 font-mono">0 Kata | 0 Karakter</span>
+                            <button onclick="copyScratchpad()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-xs font-semibold flex items-center gap-1 transition-all">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Salin
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="scratchpadArea" oninput="updateScratchStats()" class="w-full flex-1 min-h-[300px] bg-slate-100/80 dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono leading-relaxed" placeholder="Tulis catatan cepat, ide, atau to-do sementara di sini... Tersimpan otomatis secara lokal."></textarea>
+                </div>
+
+                <!-- Quick Utility Tools Panel -->
+                <div class="flex flex-col gap-6">
+                    <!-- Password Generator -->
+                    <div class="glass rounded-3xl p-6 shadow-xl">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                            <i data-lucide="key" class="w-4 h-4 text-amber-500"></i>
+                            Pembuat Sandi Aman
+                        </h3>
+                        <div class="flex items-center gap-2 mb-3">
+                            <input type="text" id="genPasswordResult" readonly class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold">
+                            <button onclick="copyPassword()" class="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300" title="Salin Sandi">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <button onclick="generateRandomPassword()" class="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition-all shadow-md">
+                            Buat Sandi Acak
+                        </button>
+                    </div>
+
+                    <!-- CSS Gradient Generator -->
+                    <div class="glass rounded-3xl p-6 shadow-xl flex-1">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                            <i data-lucide="palette" class="w-4 h-4 text-pink-500"></i>
+                            Generator Gradien Warna
+                        </h3>
+                        <div id="gradientPreview" class="w-full h-24 rounded-2xl border border-slate-300 dark:border-slate-700 mb-3 shadow-inner"></div>
+                        <div class="flex gap-2 mb-3">
+                            <button onclick="generateRandomGradient()" class="w-full py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs transition-all shadow-md">
+                                Acak Gradien
+                            </button>
+                            <button onclick="copyGradientCSS()" class="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-xs font-semibold" title="Salin Kode CSS">
+                                <i data-lucide="code" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Add New Task -->
+    <div id="addTaskModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden">
+        <div class="glass w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200/50 dark:border-slate-800">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Tambah Tugas Baru</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">Judul Tugas</label>
+                    <input type="text" id="modalTaskTitle" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Misal: Selesaikan laporan proyek">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">Prioritas</label>
+                    <select id="modalTaskPriority" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="Rendah">Rendah</option>
+                        <option value="Sedang" selected>Sedang</option>
+                        <option value="Tinggi">Tinggi</option>
+                    </select>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button onclick="closeAddTaskModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-semibold">Batal</button>
+                    <button onclick="confirmAddTask()" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-md">Simpan Tugas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ----------------------------------------------------
+           APPLICATION STATE & LOCAL STORAGE
+        ---------------------------------------------------- */
+        const APP_STATE_KEY = 'zenith_workspace_data_v1';
+
+        let appData = {
+            theme: 'dark',
+            pomodoro: {
+                focusTime: 25,
+                shortBreak: 5,
+                longBreak: 15,
+                sessionsCompleted: 0,
+                totalMinutesFocused: 0
+            },
+            kanban: [
+                { id: '1', title: 'Pelajari konsep Tailwind & Web Audio', priority: 'Tinggi', status: 'todo' },
+                { id: '2', title: 'Mulai buat draf ide proyek', priority: 'Sedang', status: 'inprogress' },
+                { id: '3', title: 'Minum air putih 2 liter', priority: 'Rendah', status: 'done' }
+            ],
+            habits: [
+                { id: 'h1', title: 'Membaca Buku 15 Menit', completedToday: false },
+                { id: 'h2', title: 'Olahraga Ringan', completedToday: false },
+                { id: 'h3', title: 'Meditasi Pagi', completedToday: false }
+            ],
+            wheelItems: ['Nasi Goreng', 'Ayam Geprek', 'Ramen', 'Bakso Solo', 'Pizza', 'Gado-gado'],
+            scratchpad: ''
+        };
+
+        function loadAppData() {
+            try {
+                const saved = localStorage.getItem(APP_STATE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    appData = { ...appData, ...parsed };
+                }
+            } catch (e) {
+                console.error("Gagal memuat data lokal:", e);
+            }
+        }
+
+        function saveAppData() {
+            try {
+                localStorage.setItem(APP_STATE_KEY, JSON.stringify(appData));
+            } catch (e) {
+                console.error("Gagal menyimpan data lokal:", e);
+            }
+        }
+
+        /* ----------------------------------------------------
+           TOAST NOTIFICATION SYSTEM (Replacement for alert)
+        ---------------------------------------------------- */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-2xl shadow-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto border ${
+                type === 'success' ? 'bg-emerald-900/90 border-emerald-700 text-emerald-100' :
+                type === 'error' ? 'bg-rose-900/90 border-rose-700 text-rose-100' :
+                'bg-slate-900/90 border-slate-700 text-white'
+            }`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-4 h-4"></i> ${message}`;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        /* ----------------------------------------------------
+           LIVE CLOCK & THEME SYSTEM
+        ---------------------------------------------------- */
+        function initClock() {
+            const update = () => {
+                const now = new Date();
+                document.getElementById('liveTime').textContent = now.toLocaleTimeString('id-ID');
+                document.getElementById('liveDate').textContent = now.toLocaleDateString('id-ID', {
+                    weekday: 'short', day: 'numeric', month: 'short'
+                });
+            };
+            update();
+            setInterval(update, 1000);
+        }
+
+        function applyTheme(theme) {
+            appData.theme = theme;
+            saveAppData();
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').setAttribute('data-lucide', 'sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('themeIcon').setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+        }
+
+        function toggleTheme() {
+            applyTheme(appData.theme === 'dark' ? 'light' : 'dark');
+        }
+
+        /* ----------------------------------------------------
+           TAB NAVIGATION SWITCHER
+        ---------------------------------------------------- */
+        function switchTab(tabId) {
+            document.querySelectorAll('.module-panel').forEach(panel => panel.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-200', 'dark:hover:bg-slate-800');
+            });
+
+            const targetPanel = document.getElementById(`module-${tabId}`);
+            if (targetPanel) targetPanel.classList.remove('hidden');
+
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-200', 'dark:hover:bg-slate-800');
+                activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow-md');
+            }
+
+            if (tabId === 'decision') drawWheel();
+        }
+
+        /* ----------------------------------------------------
+           MODULE 1: POMODORO LOGIC
+        ---------------------------------------------------- */
+        let pomoState = {
+            mode: 'pomodoro', // pomodoro, shortBreak, longBreak
+            timeLeft: 25 * 60,
+            totalDuration: 25 * 60,
+            isRunning: false,
+            interval: null
+        };
+
+        function setTimerMode(mode) {
+            pomoState.mode = mode;
+            pomoState.isRunning = false;
+            clearInterval(pomoState.interval);
+
+            let minutes = appData.pomodoro.focusTime;
+            if (mode === 'shortBreak') minutes = appData.pomodoro.shortBreak;
+            if (mode === 'longBreak') minutes = appData.pomodoro.longBreak;
+
+            pomoState.timeLeft = minutes * 60;
+            pomoState.totalDuration = minutes * 60;
+
+            // Update UI buttons
+            ['pomodoro', 'shortBreak', 'longBreak'].forEach(m => {
+                const btn = document.getElementById(`mode-${m}`);
+                if (m === mode) {
+                    btn.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-brand-600 text-white shadow-md";
+                } else {
+                    btn.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
+                }
+            });
+
+            updatePomoDisplay();
+        }
+
+        function togglePomodoro() {
+            if (pomoState.isRunning) {
+                // Pause
+                clearInterval(pomoState.interval);
+                pomoState.isRunning = false;
+                document.getElementById('pomoStartBtnText').textContent = 'Lanjutkan';
+                document.getElementById('pomoStartIcon').setAttribute('data-lucide', 'play');
+            } else {
+                // Start
+                pomoState.isRunning = true;
+                document.getElementById('pomoStartBtnText').textContent = 'Jeda';
+                document.getElementById('pomoStartIcon').setAttribute('data-lucide', 'pause');
+
+                pomoState.interval = setInterval(() => {
+                    if (pomoState.timeLeft > 0) {
+                        pomoState.timeLeft--;
+                        updatePomoDisplay();
+                    } else {
+                        // Timer Completed!
+                        clearInterval(pomoState.interval);
+                        pomoState.isRunning = false;
+                        playAlertSound();
+                        showToast('Waktu sesi Pomodoro telah selesai!', 'success');
+
+                        if (pomoState.mode === 'pomodoro') {
+                            appData.pomodoro.sessionsCompleted++;
+                            appData.pomodoro.totalMinutesFocused += appData.pomodoro.focusTime;
+                            saveAppData();
+                            renderPomoStats();
+                        }
+                        resetPomodoro();
+                    }
+                }, 1000);
+            }
+            lucide.createIcons();
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomoState.interval);
+            pomoState.isRunning = false;
+            setTimerMode(pomoState.mode);
+            document.getElementById('pomoStartBtnText').textContent = 'Mulai Fokus';
+            document.getElementById('pomoStartIcon').setAttribute('data-lucide', 'play');
+            lucide.createIcons();
+        }
+
+        function updatePomoDisplay() {
+            const mins = Math.floor(pomoState.timeLeft / 60);
+            const secs = pomoState.timeLeft % 60;
+            const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            document.getElementById('pomoTimeDisplay').textContent = formatted;
+
+            // Update Circle Ring Progress
+            const ring = document.getElementById('timerProgressRing');
+            const circumference = 276.46; // 2 * PI * 44
+            const offset = circumference - (pomoState.timeLeft / pomoState.totalDuration) * circumference;
+            ring.style.strokeDashoffset = offset;
+        }
+
+        function applyCustomPomoTimes() {
+            const focus = parseInt(document.getElementById('customFocusInput').value) || 25;
+            const short = parseInt(document.getElementById('customShortInput').value) || 5;
+
+            appData.pomodoro.focusTime = focus;
+            appData.pomodoro.shortBreak = short;
+            saveAppData();
+
+            setTimerMode(pomoState.mode);
+            showToast('Pengaturan waktu berhasil disimpan!', 'success');
+        }
+
+        function renderPomoStats() {
+            document.getElementById('statSessionsCount').textContent = appData.pomodoro.sessionsCompleted;
+            document.getElementById('statTotalMinutes').textContent = `${appData.pomodoro.totalMinutesFocused}m`;
+        }
+
+        /* ----------------------------------------------------
+           MODULE 2: WEB AUDIO API PROCEDURAL SOUND GENERATOR
+        ---------------------------------------------------- */
+        let audioCtx = null;
+        const activeSounds = {};
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playAlertSound() {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.8);
+            } catch (e) {}
+        }
+
+        function createNoiseNode(ctx, type = 'white') {
+            const bufferSize = ctx.sampleRate * 2;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            let lastOut = 0.0;
+
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                if (type === 'brown') {
+                    data[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = data[i];
+                    data[i] *= 3.5;
+                } else {
+                    data[i] = white;
+                }
+            }
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            noise.loop = true;
+            return noise;
+        }
+
+        function toggleSound(soundType) {
+            const ctx = getAudioContext();
+            const btn = document.getElementById(`btn-sound-${soundType}`);
+
+            if (activeSounds[soundType]) {
+                // Stop sound
+                if (activeSounds[soundType].stop) activeSounds[soundType].stop();
+                delete activeSounds[soundType];
+                btn.classList.remove('bg-brand-600', 'text-white');
+                btn.classList.add('bg-slate-200', 'dark:bg-slate-800');
+            } else {
+                // Start Sound
+                const gainNode = ctx.createGain();
+                gainNode.gain.value = 0.3;
+
+                let soundObj = { gain: gainNode };
+
+                if (soundType === 'rain') {
+                    const noise = createNoiseNode(ctx, 'white');
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 1000;
+                    noise.connect(filter);
+                    filter.connect(gainNode);
+                    noise.start();
+                    soundObj.stop = () => noise.stop();
+                } else if (soundType === 'wind') {
+                    const noise = createNoiseNode(ctx, 'brown');
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.value = 400;
+                    filter.Q.value = 3;
+                    noise.connect(filter);
+                    filter.connect(gainNode);
+                    noise.start();
+                    soundObj.stop = () => noise.stop();
+                } else if (soundType === 'brown') {
+                    const noise = createNoiseNode(ctx, 'brown');
+                    noise.connect(gainNode);
+                    noise.start();
+                    soundObj.stop = () => noise.stop();
+                } else if (soundType === 'waves') {
+                    const noise = createNoiseNode(ctx, 'brown');
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 500;
+
+                    // LFO for wave modulation
+                    const lfo = ctx.createOscillator();
+                    lfo.frequency.value = 0.15; // wave cycle
+                    const lfoGain = ctx.createGain();
+                    lfoGain.gain.value = 300;
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(filter.frequency);
+
+                    noise.connect(filter);
+                    filter.connect(gainNode);
+                    noise.start();
+                    lfo.start();
+                    soundObj.stop = () => { noise.stop(); lfo.stop(); };
+                } else if (soundType === 'binaural') {
+                    const oscL = ctx.createOscillator();
+                    const oscR = ctx.createOscillator();
+                    const merger = ctx.createChannelMerger(2);
+
+                    oscL.frequency.value = 200;
+                    oscR.frequency.value = 240; // 40Hz Alpha binaural difference
+
+                    oscL.connect(merger, 0, 0);
+                    oscR.connect(merger, 0, 1);
+                    merger.connect(gainNode);
+
+                    oscL.start();
+                    oscR.start();
+                    soundObj.stop = () => { oscL.stop(); oscR.stop(); };
+                } else if (soundType === 'fire') {
+                    const noise = createNoiseNode(ctx, 'white');
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'highpass';
+                    filter.frequency.value = 1200;
+                    noise.connect(filter);
+                    filter.connect(gainNode);
+                    noise.start();
+                    soundObj.stop = () => noise.stop();
+                }
+
+                gainNode.connect(ctx.destination);
+                activeSounds[soundType] = soundObj;
+
+                btn.classList.add('bg-brand-600', 'text-white');
+                btn.classList.remove('bg-slate-200', 'dark:bg-slate-800');
+            }
+        }
+
+        function setSoundVolume(soundType, val) {
+            if (activeSounds[soundType] && activeSounds[soundType].gain) {
+                activeSounds[soundType].gain.gain.value = (val / 100);
+            }
+        }
+
+        function stopAllAudio() {
+            Object.keys(activeSounds).forEach(type => {
+                if (activeSounds[type].stop) activeSounds[type].stop();
+                const btn = document.getElementById(`btn-sound-${type}`);
+                if (btn) {
+                    btn.classList.remove('bg-brand-600', 'text-white');
+                    btn.classList.add('bg-slate-200', 'dark:bg-slate-800');
+                }
+            });
+            showToast('Semua suara dihentikan');
+        }
+
+        /* ----------------------------------------------------
+           MODULE 3: KANBAN & HABITS LOGIC
+        ---------------------------------------------------- */
+        function renderKanban() {
+            const cols = { todo: [], inprogress: [], done: [] };
+            appData.kanban.forEach(task => {
+                if (cols[task.status]) cols[task.status].push(task);
+            });
+
+            ['todo', 'inprogress', 'done'].forEach(status => {
+                const container = document.getElementById(`col-${status}`);
+                document.getElementById(`count-${status}`).textContent = cols[status].length;
+                container.innerHTML = '';
+
+                cols[status].forEach(task => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all";
+                    
+                    const prioColor = task.priority === 'Tinggi' ? 'bg-rose-500/10 text-rose-500' :
+                                     task.priority === 'Sedang' ? 'bg-amber-500/10 text-amber-500' :
+                                     'bg-emerald-500/10 text-emerald-500';
+
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${prioColor}">${task.priority}</span>
+                            <button onclick="deleteTask('${task.id}')" class="text-slate-400 hover:text-red-500 transition-colors">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-3">${task.title}</p>
+                        <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-2">
+                            ${status !== 'todo' ? `<button onclick="moveTask('${task.id}', '${status === 'done' ? 'inprogress' : 'todo'}')" class="text-[10px] text-slate-500 hover:text-brand-500 font-bold">← Geser</button>` : '<span></span>'}
+                            ${status !== 'done' ? `<button onclick="moveTask('${task.id}', '${status === 'todo' ? 'inprogress' : 'done'}')" class="text-[10px] text-slate-500 hover:text-brand-500 font-bold">Lanjut →</button>` : '<span></span>'}
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+            lucide.createIcons();
+        }
+
+        function moveTask(id, newStatus) {
+            const task = appData.kanban.find(t => t.id === id);
+            if (task) {
+                task.status = newStatus;
+                saveAppData();
+                renderKanban();
+            }
+        }
+
+        function deleteTask(id) {
+            appData.kanban = appData.kanban.filter(t => t.id !== id);
+            saveAppData();
+            renderKanban();
+            showToast('Tugas dihapus');
+        }
+
+        function openAddTaskModal() {
+            document.getElementById('addTaskModal').classList.remove('hidden');
+        }
+        function closeAddTaskModal() {
+            document.getElementById('addTaskModal').classList.add('hidden');
+        }
+
+        function confirmAddTask() {
+            const title = document.getElementById('modalTaskTitle').value.trim();
+            const priority = document.getElementById('modalTaskPriority').value;
+            if (!title) return showToast('Judul tugas tidak boleh kosong', 'error');
+
+            appData.kanban.push({
+                id: Date.now().toString(),
+                title,
+                priority,
+                status: 'todo'
+            });
+            saveAppData();
+            renderKanban();
+            closeAddTaskModal();
+            document.getElementById('modalTaskTitle').value = '';
+            showToast('Tugas baru ditambahkan', 'success');
+        }
+
+        // HABIT TRACKER
+        function renderHabits() {
+            const container = document.getElementById('habitsListContainer');
+            container.innerHTML = '';
+
+            appData.habits.forEach(habit => {
+                const item = document.createElement('div');
+                item.className = `p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                    habit.completedToday 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200' 
+                    : 'bg-slate-100/80 dark:bg-slate-900/60 border-slate-200/60 dark:border-slate-800'
+                }`;
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleHabit('${habit.id}')" class="w-6 h-6 rounded-lg flex items-center justify-center border transition-all ${
+                            habit.completedToday 
+                            ? 'bg-emerald-500 border-emerald-500 text-white' 
+                            : 'border-slate-400 dark:border-slate-600'
+                        }">
+                            ${habit.completedToday ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}
+                        </button>
+                        <span class="text-xs font-semibold ${habit.completedToday ? 'line-through opacity-70' : ''}">${habit.title}</span>
+                    </div>
+                    <button onclick="deleteHabit('${habit.id}')" class="text-slate-400 hover:text-red-500">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                `;
+                container.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        function toggleHabit(id) {
+            const habit = appData.habits.find(h => h.id === id);
+            if (habit) {
+                habit.completedToday = !habit.completedToday;
+                saveAppData();
+                renderHabits();
+            }
+        }
+
+        function addNewHabitPrompt() {
+            const title = prompt('Masukkan nama kebiasaan baru:');
+            if (title && title.trim()) {
+                appData.habits.push({ id: Date.now().toString(), title: title.trim(), completedToday: false });
+                saveAppData();
+                renderHabits();
+                showToast('Kebiasaan ditambahkan', 'success');
+            }
+        }
+
+        function deleteHabit(id) {
+            appData.habits = appData.habits.filter(h => h.id !== id);
+            saveAppData();
+            renderHabits();
+        }
+
+        /* ----------------------------------------------------
+           MODULE 4: CANVAS WHEEL OF FORTUNE & DECISION MAKER
+        ---------------------------------------------------- */
+        let wheelRotation = 0;
+        let isSpinning = false;
+        const wheelColors = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
+
+        function updateWheelItems() {
+            const txt = document.getElementById('wheelOptionsTextarea').value;
+            const items = txt.split('\n').map(s => s.trim()).filter(Boolean);
+            if (items.length > 0) {
+                appData.wheelItems = items;
+                saveAppData();
+                drawWheel();
+            }
+        }
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const items = appData.wheelItems;
+            const numSegments = items.length;
+            const arc = (2 * Math.PI) / numSegments;
+            const radius = canvas.width / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            items.forEach((item, i) => {
+                const angle = wheelRotation + i * arc;
+                ctx.beginPath();
+                ctx.fillStyle = wheelColors[i % wheelColors.length];
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius - 10, angle, angle + arc);
+                ctx.lineTo(radius, radius);
+                ctx.fill();
+
+                // Text label
+                ctx.save();
+                ctx.translate(radius, radius);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 12px Inter, sans-serif";
+                ctx.fillText(item.length > 15 ? item.substring(0, 12) + '...' : item, radius - 25, 4);
+                ctx.restore();
+            });
+        }
+
+        function spinWheel() {
+            if (isSpinning || appData.wheelItems.length === 0) return;
+            isSpinning = true;
+
+            const extraRotations = 5 + Math.floor(Math.random() * 5);
+            const randomAngle = Math.random() * Math.PI * 2;
+            const targetRotation = wheelRotation + (extraRotations * Math.PI * 2) + randomAngle;
+
+            const startTime = performance.now();
+            const duration = 4000; // 4 seconds spin
+
+            function animateSpin(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Ease out cubic
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+
+                wheelRotation = targetRotation * easeOut;
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    isSpinning = false;
+                    // Calculate winner item
+                    const items = appData.wheelItems;
+                    const arc = (2 * Math.PI) / items.length;
+                    const normalizedRotation = (wheelRotation + Math.PI / 2) % (2 * Math.PI);
+                    const winningIndex = Math.floor((2 * Math.PI - normalizedRotation) / arc) % items.length;
+                    const winningText = items[winningIndex < 0 ? winningIndex + items.length : winningIndex];
+
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    showToast(`Hasil Roda: "${winningText}"`, 'success');
+                }
+            }
+            requestAnimationFrame(animateSpin);
+        }
+
+        function generateRandomNumber() {
+            const min = parseInt(document.getElementById('numMin').value) || 1;
+            const max = parseInt(document.getElementById('numMax').value) || 100;
+            const res = Math.floor(Math.random() * (max - min + 1)) + min;
+            document.getElementById('randomNumberResult').textContent = res;
+        }
+
+        /* ----------------------------------------------------
+           MODULE 5: BREATHING GUIDE LOGIC
+        ---------------------------------------------------- */
+        let breatheInterval = null;
+        let isBreathingActive = false;
+
+        function toggleBreathing() {
+            const circle = document.getElementById('breatheGuideCircle');
+            const text = document.getElementById('breatheText');
+            const btn = document.getElementById('startBreatheBtn');
+
+            if (isBreathingActive) {
+                clearInterval(breatheInterval);
+                isBreathingActive = false;
+                circle.style.transform = "scale(1)";
+                text.textContent = "Siap?";
+                btn.querySelector('span').textContent = "Mulai Latihan";
+            } else {
+                isBreathingActive = true;
+                btn.querySelector('span').textContent = "Hentikan";
+
+                let step = 0; // 0: Tarik, 1: Tahan, 2: Hembuskan, 3: Tahan
+                const cycle = () => {
+                    if (step === 0) {
+                        text.textContent = "Tarik Napas...";
+                        circle.style.transform = "scale(1.7)";
+                    } else if (step === 1) {
+                        text.textContent = "Tahan...";
+                    } else if (step === 2) {
+                        text.textContent = "Hembuskan...";
+                        circle.style.transform = "scale(1)";
+                    } else if (step === 3) {
+                        text.textContent = "Tahan...";
+                    }
+                    step = (step + 1) % 4;
+                };
+                cycle();
+                breatheInterval = setInterval(cycle, 4000);
+            }
+        }
+
+        /* ----------------------------------------------------
+           MODULE 6: SCRATCHPAD & UTILITY TOOLS
+        ---------------------------------------------------- */
+        function initScratchpad() {
+            const area = document.getElementById('scratchpadArea');
+            area.value = appData.scratchpad || '';
+            updateScratchStats();
+
+            area.addEventListener('input', () => {
+                appData.scratchpad = area.value;
+                saveAppData();
+                updateScratchStats();
+            });
+        }
+
+        function updateScratchStats() {
+            const text = document.getElementById('scratchpadArea').value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            document.getElementById('scratchStats').textContent = `${words} Kata | ${chars} Karakter`;
+        }
+
+        function copyScratchpad() {
+            const text = document.getElementById('scratchpadArea').value;
+            copyToClipboard(text, 'Catatan berhasil disalin ke clipboard');
+        }
+
+        function generateRandomPassword() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+            let pass = "";
+            for (let i = 0; i < 16; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('genPasswordResult').value = pass;
+        }
+
+        function copyPassword() {
+            const pass = document.getElementById('genPasswordResult').value;
+            if (pass) copyToClipboard(pass, 'Sandi disalin!');
+        }
+
+        let currentGradientCSS = '';
+        function generateRandomGradient() {
+            const colors = ['#f43f5e', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+            const c1 = colors[Math.floor(Math.random() * colors.length)];
+            let c2 = colors[Math.floor(Math.random() * colors.length)];
+            while (c1 === c2) c2 = colors[Math.floor(Math.random() * colors.length)];
+
+            currentGradientCSS = `linear-gradient(135deg, ${c1}, ${c2})`;
+            document.getElementById('gradientPreview').style.background = currentGradientCSS;
+        }
+
+        function copyGradientCSS() {
+            if (currentGradientCSS) copyToClipboard(`background: ${currentGradientCSS};`, 'Kode Gradien CSS disalin!');
+        }
+
+        function copyToClipboard(text, successMsg) {
+            if (!text) return;
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast(successMsg, 'success');
+        }
+
+        function resetAllData() {
+            if (confirm("Apakah Anda yakin ingin mereset semua data aplikasi?")) {
+                localStorage.removeItem(APP_STATE_KEY);
+                location.reload();
+            }
+        }
+
+        /* ----------------------------------------------------
+           BACKGROUND PARTICLE CANVAS EFFECT
+        ---------------------------------------------------- */
+        function initBgCanvas() {
+            const canvas = document.getElementById('bgCanvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            for (let i = 0; i < 35; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 3 + 1,
+                    dx: (Math.random() - 0.5) * 0.5,
+                    dy: (Math.random() - 0.5) * 0.5,
+                    alpha: Math.random() * 0.5 + 0.2
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.dx;
+                    p.y += p.dy;
+                    if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = appData.theme === 'dark' ? `rgba(99, 102, 241, ${p.alpha})` : `rgba(59, 130, 246, ${p.alpha})`;
+                    ctx.fill();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        /* ----------------------------------------------------
+           APP INITIALIZATION ON LOAD
+        ---------------------------------------------------- */
+        window.onload = function() {
+            loadAppData();
+            initClock();
+            applyTheme(appData.theme);
+            renderPomoStats();
+            renderKanban();
+            renderHabits();
+            initScratchpad();
+            generateRandomPassword();
+            generateRandomGradient();
+            document.getElementById('wheelOptionsTextarea').value = appData.wheelItems.join('\n');
+            initBgCanvas();
+
+            // Initial Tab setup
+            switchTab('pomodoro');
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
